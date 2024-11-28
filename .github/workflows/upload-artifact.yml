@@ -1,0 +1,29 @@
+# .github/workflows/upload-artifact.yml
+name: Upload Artifact with Version
+
+on:
+  workflow_dispatch: # Allows manual triggering with inputs
+    inputs:
+      version:
+        description: "Semantic version of the artifact (e.g., 1.0.0)"
+        required: true
+        default: "1.0.0"
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build artifact
+        run: |
+          mkdir -p output
+          echo "This is version ${{ github.event.inputs.version }}" > output/versioned-artifact.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: my-artifact-${{ github.event.inputs.version }} # Include version in artifact name
+          path: output/
