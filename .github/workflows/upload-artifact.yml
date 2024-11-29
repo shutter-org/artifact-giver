@@ -3,11 +3,6 @@ name: Upload Artifact with Version
 
 on:
   workflow_dispatch: # Allows manual triggering with inputs
-    inputs:
-      version:
-        description: "Semantic version of the artifact (e.g., 1.0.0)"
-        required: true
-        default: "1.0.0"
 
 jobs:
   upload:
@@ -17,13 +12,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Build artifact
+      - name: Read version from package.json
+        id: read_version
         run: |
-          mkdir -p output
-          echo "This is version ${{ github.event.inputs.version }}" > output/versioned-artifact.txt
+          VERSION=$(jq -r '.version' headless/package.json)
+          echo "Extracted version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_ENV
+
+      - name: Zip documentation folder
+        run: |
+          DOCS_DIR="headless/docs"
+          if [ ! -d "$DOCS_DIR" ]; then
+            echo "Documentation folder $DOCS_DIR not found."
+            exit 1
+          fi
+
+          ZIP_NAME="headless-docs-${{ env.version }}.zip"
+          zip -r "$ZIP_NAME" "$DOCS_DIR"
+          echo "Created zip file: $ZIP_NAME"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: my-artifact-${{ github.event.inputs.version }} # Include version in artifact name
-          path: output/
+          name: headless-docs-${{ env.version }}
+          path: headless-docs-${{ env.version }}.zip
